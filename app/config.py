@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     CB_FAILURE_THRESHOLD: int = 3    
     CB_RECOVERY_TIMEOUT: float = 5.0
     
+    TRUSTED_PROXIES: str = ""
+    API_KEY_HASHES: str = "" 
+    ALLOW_ANONYMOUS: bool = True
+    
     DEFAULT_CAPACITY: int = 100
     DEFAULT_REFILL_RATE: float = 10
     

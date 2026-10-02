@@ -1,13 +1,19 @@
-
 services:
-  redis: 
+  redis:
     image: redis:7-alpine
     container_name: rate_limiter_redis
-    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy volatile-lru
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"
+    command: >
+      sh -c 'exec redis-server
+      --requirepass "$$REDIS_PASSWORD"
+      --save ""
+      --appendonly no
+      --maxmemory 256mb
+      --maxmemory-policy volatile-lru'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -15,10 +21,15 @@ services:
   app:
     build: .
     container_name: rate_limiter_api
+    restart: unless-stopped
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - FAIL_OPEN=false
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"
+      FAIL_OPEN: "${FAIL_OPEN:-false}"
+      TRUSTED_PROXIES: "${TRUSTED_PROXIES:-172.16.0.0/12,192.168.0.0/16,127.0.0.0/8}"
+      API_KEY_HASHES: "${API_KEY_HASHES:-}"
+      ALLOW_ANONYMOUS: "${ALLOW_ANONYMOUS:-true}"
     ports:
       - "8000:8000"
     depends_on:
