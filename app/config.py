@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     REDIS_SOCKET_TIMEOUT: float = 0.5
     REDIS_CONNECT_TIMEOUT: float = 1.0
     
+        
+    CB_FAILURE_THRESHOLD: int = 3    
+    CB_RECOVERY_TIMEOUT: float = 5.0
+    
     DEFAULT_CAPACITY: int = 100
     DEFAULT_REFILL_RATE: float = 10
     
