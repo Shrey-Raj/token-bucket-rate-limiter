@@ -57,11 +57,11 @@ async def check_rate_limit(
             retry_after=breaker.retry_after(), log=False,
         )
 
-    if not redis_manager.client or not redis_manager.lua_sha:
-        breaker.record_failure()
-        return _degraded_result(client_id, capacity, "Redis client not initialized")
+
 
     try:
+        if not redis_manager.lua_sha:
+            await redis_manager.initialize()
         try:
             res = await redis_manager.client.evalsha(
                 redis_manager.lua_sha, 1, redis_key, capacity, refill_rate, cost

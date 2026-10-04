@@ -5,11 +5,16 @@ from app.core.limiter import check_rate_limit, RateLimiterResult
 from app.core.identity import client_ip, key_identity
 from app.config import settings
 from app.core.circuit_breaker import breaker
+import logging
 
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await redis_manager.initialize()
+    try:
+        await redis_manager.initialize()
+    except Exception as e:
+        logger.error("Redis unavailable at startup, will retry on demand: %s", e)
     yield
     await redis_manager.close()
 
@@ -75,11 +80,10 @@ async def evaluate_rate_limit(
 
 @app.get("/ready")
 async def ready():
-    client = redis_manager.client
-    if not client or not redis_manager.lua_sha:
-        raise HTTPException(status_code=503, detail="Redis client not initialized")
     try:
-        await client.ping()
+        if not redis_manager.lua_sha:
+            await redis_manager.initialize()
+        await redis_manager.client.ping()
     except Exception:
         raise HTTPException(status_code=503, detail="Redis unreachable")
     return {"status": "ready", "circuit": breaker.state}
