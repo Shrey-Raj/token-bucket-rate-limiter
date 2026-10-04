@@ -91,3 +91,14 @@ async def ready():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+if settings.DEBUG:
+    @app.get("/debug/ip", include_in_schema=False)
+    async def debug_ip(request: Request):
+        peer = request.client.host if request.client else None
+        forwarded = request.headers.get("x-forwarded-for")
+        return {
+            "peer": peer,
+            "x_forwarded_for": forwarded,
+            "resolved": client_ip(peer, forwarded),
+        }
