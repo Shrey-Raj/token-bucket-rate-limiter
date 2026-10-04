@@ -26,9 +26,9 @@ curl -i https://token-bucket-rate-limiter-372o.onrender.com/v1/check
 
 ## Interactive demo
 
-Open the live URL to try the limiter without any tools.
+Open the [Live URL](https://token-bucket-rate-limiter-372o.onrender.com/) to try the limiter without any tools.
 
-<!-- Add a screenshot of a burst here: ![Interactive demo](docs/demo.png) -->
+![Interactive demo](app/static/assets/image.png)
 
 - **Send 1 request** shows the result (`200` allowed or `429` rejected), the tokens left, and a `Retry-After` countdown.
 - **Send burst of 150** fires 150 requests at once and shows when they flip from allowed to rejected, along with the most that could have passed (starting tokens + refill rate × elapsed time).
