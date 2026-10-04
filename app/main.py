@@ -6,6 +6,8 @@ from app.core.identity import client_ip, key_identity
 from app.config import settings
 from app.core.circuit_breaker import breaker
 import logging
+from pathlib import Path
+from fastapi.responses import HTMLResponse
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,26 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+
+_PAGE = (
+    (Path(__file__).parent / "static" / "index.html")
+    .read_text(encoding="utf-8")
+    .replace("__CAPACITY__", str(settings.DEFAULT_CAPACITY))
+    .replace("__REFILL__", str(settings.DEFAULT_REFILL_RATE))
+)
+
+
+@app.middleware("http")
+async def no_store_for_api(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/v1/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.get("/", include_in_schema=False)
+async def demo_page():
+    return HTMLResponse(_PAGE, headers={"Cache-Control": "no-cache"})
 
 
 def _rate_headers(result: RateLimiterResult) -> dict:
