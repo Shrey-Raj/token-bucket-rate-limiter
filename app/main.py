@@ -4,6 +4,7 @@ from app.core.redis import redis_manager
 from app.core.limiter import check_rate_limit, RateLimiterResult
 from app.core.identity import client_ip, key_identity
 from app.config import settings
+from app.core.circuit_breaker import breaker
 
 
 @asynccontextmanager
@@ -72,6 +73,16 @@ async def evaluate_rate_limit(
 
     return {"status": "allowed", "client_id": client_id}
 
+@app.get("/ready")
+async def ready():
+    client = redis_manager.client
+    if not client or not redis_manager.lua_sha:
+        raise HTTPException(status_code=503, detail="Redis client not initialized")
+    try:
+        await client.ping()
+    except Exception:
+        raise HTTPException(status_code=503, detail="Redis unreachable")
+    return {"status": "ready", "circuit": breaker.state}
 
 @app.get("/health")
 async def health_check():
